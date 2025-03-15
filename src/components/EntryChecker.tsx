@@ -93,7 +93,7 @@ const EntryChecker = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="flex-1"
-              disabled={connected && publicKey}
+              disabled={!!(connected && publicKey)}
             />
             <Button type="submit" disabled={isLoading} className="bg-bmoonie-gradient hover:opacity-90 transition-opacity">
               {isLoading ? "Checking..." : "Check"}
