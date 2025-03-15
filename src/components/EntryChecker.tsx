@@ -1,11 +1,12 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { shortenAddress } from "@/lib/formatters";
 import { useToast } from "@/hooks/use-toast";
 import { COLLECTION_ADDRESS } from "@/lib/mockData";
+import { useWallet } from "@solana/wallet-adapter-react";
 
 const EntryChecker = () => {
   const [address, setAddress] = useState("");
@@ -16,10 +17,18 @@ const EntryChecker = () => {
     entries: number;
   } | null>(null);
   const { toast } = useToast();
+  const { publicKey, connected } = useWallet();
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!address) return;
+  useEffect(() => {
+    if (connected && publicKey) {
+      setAddress(publicKey.toString());
+      // Optionally auto-check entries when wallet connects
+      // handleCheckEntries(publicKey.toString());
+    }
+  }, [connected, publicKey]);
+
+  const handleCheckEntries = (addressToCheck: string) => {
+    if (!addressToCheck) return;
 
     setIsLoading(true);
     
@@ -28,10 +37,10 @@ const EntryChecker = () => {
       // Generate random entries for demo
       const randomEntries = Math.floor(Math.random() * 15);
       
-      if (address.length >= 32) {
+      if (addressToCheck.length >= 32) {
         setEntryResult({
-          walletAddress: address,
-          displayAddress: shortenAddress(address),
+          walletAddress: addressToCheck,
+          displayAddress: shortenAddress(addressToCheck),
           entries: randomEntries
         });
         
@@ -60,6 +69,11 @@ const EntryChecker = () => {
     }, 1500);
   };
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleCheckEntries(address);
+  };
+
   return (
     <div className="w-full bg-card rounded-xl p-4 shadow-md border border-border">
       <div className="flex items-center gap-2 mb-4">
@@ -79,13 +93,14 @@ const EntryChecker = () => {
               value={address}
               onChange={(e) => setAddress(e.target.value)}
               className="flex-1"
+              disabled={connected && publicKey}
             />
             <Button type="submit" disabled={isLoading} className="bg-bmoonie-gradient hover:opacity-90 transition-opacity">
               {isLoading ? "Checking..." : "Check"}
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Enter your Solana wallet address to check how many B-Moonies you have entered
+            {connected ? "Using connected wallet address" : "Enter your Solana wallet address to check how many B-Moonies you have entered"}
           </p>
         </div>
       </form>
@@ -120,7 +135,7 @@ const EntryChecker = () => {
               <p className="text-sm text-muted-foreground">
                 No entries found. Purchase or transfer B-Moonies to this wallet to participate.
                 <a 
-                  href={`https://magiceden.io/marketplace/9JXzbUZVAMb6wiDq8dWUw9GbszsYqLQE2pLaPoS5m7d7`}
+                  href={`https://magiceden.io/marketplace/${COLLECTION_ADDRESS}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block text-bmoonie-blue hover:underline mt-1"
